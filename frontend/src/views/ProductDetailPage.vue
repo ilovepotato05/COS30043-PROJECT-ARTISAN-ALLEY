@@ -25,7 +25,6 @@
         <div class="product_actions">
           <button class="btn_cart">Add to Cart</button>
           <RouterLink to="/products" class="btn_back">Back to Products</RouterLink>
-          <button class="primary_btn" @click="tryOn(product)">Try On</button>
         </div>
       </div>
     </section>
