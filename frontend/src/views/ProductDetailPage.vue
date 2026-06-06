@@ -1,32 +1,58 @@
 <template>
   <main class="product-detail-page">
+
+    <!-- Loading -->
     <div v-if="loading" class="status_message">
       <p>Loading product...</p>
     </div>
 
+    <!-- Error -->
     <div v-else-if="error" class="status_message error">
       <p>{{ error }}</p>
     </div>
 
+    <!-- Product -->
     <section v-else-if="product" class="product_detail">
+
       <div class="product_image">
-        <img :src="`http://localhost:5000/images/${product.image}`" :alt="product.name" />
+        <img
+          :src="`http://localhost:5000/images/${product.image}`"
+          :alt="product.name"
+        />
       </div>
 
       <div class="product_info">
         <p class="product_category">{{ product.category }}</p>
         <h1>{{ product.name }}</h1>
-        <p class="product_price">RM {{ Number(product.price).toFixed(2) }}</p>
+
+        <p class="product_price">
+          RM {{ Number(product.price).toFixed(2) }}
+        </p>
 
         <p class="product_desc">
           {{ product.description }}
         </p>
 
         <div class="product_actions">
-          <button class="btn_cart">Add to Cart</button>
-          <RouterLink to="/products" class="btn_back">Back to Products</RouterLink>
+
+          <!-- Add to Cart -->
+          <button class="btn_cart" @click="addToCart">
+            Add to Cart
+          </button>
+
+          <!-- Add to Wishlist -->
+          <button class="btn_wishlist" @click="addToWishlist">
+            ♥ Add to Wishlist
+          </button>
+
+          <!-- Back -->
+          <RouterLink to="/products" class="btn_back">
+            Back to Products
+          </RouterLink>
+
         </div>
       </div>
+
     </section>
   </main>
 </template>
@@ -35,13 +61,13 @@
 import { RouterLink } from 'vue-router'
 import api from '../services/api'
 
-
 export default {
   name: 'ProductDetailPage',
 
   components: {
     RouterLink
   },
+
   data() {
     return {
       product: null,
@@ -49,6 +75,7 @@ export default {
       error: ''
     }
   },
+
   async mounted() {
     try {
       const productId = this.$route.params.id
@@ -61,7 +88,51 @@ export default {
       this.loading = false
     }
   },
-  
+
+  methods: {
+
+    // 🛒 Add to cart (localStorage for now, same style as your project)
+    addToCart() {
+      let cart = JSON.parse(localStorage.getItem('cart')) || []
+
+      const existing = cart.find(item => item._id === this.product._id)
+
+      if (existing) {
+        existing.quantity += 1
+      } else {
+        cart.push({
+          ...this.product,
+          quantity: 1
+        })
+      }
+
+      localStorage.setItem('cart', JSON.stringify(cart))
+      alert('Added to cart!')
+    },
+
+    // ❤️ Add to wishlist (backend)
+    async addToWishlist() {
+      try {
+        await api.post('/wishlist', {
+          productId: this.product._id,
+          name: this.product.name,
+          price: this.product.price,
+          image: this.product.image,
+          category: this.product.category
+        })
+
+        alert('Added to wishlist ❤️')
+
+      } catch (err) {
+        if (err.response?.status === 409) {
+          alert('Already in wishlist')
+        } else {
+          console.error('Wishlist error:', err)
+          alert('Failed to add to wishlist')
+        }
+      }
+    }
+  }
 }
 </script>
 
@@ -165,6 +236,23 @@ export default {
 
 .primary_btn:hover {
   background: #E5D1B7;
+}
+
+/* ❤️ ADDED: Wishlist button (NEW - safe merge) */
+.btn_wishlist {
+  padding: 0.85rem 1.4rem;
+  background: #674C47;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.btn_wishlist:hover {
+  background: #E5D1B7;
+  color: #674C47;
 }
 
 .status_message {
